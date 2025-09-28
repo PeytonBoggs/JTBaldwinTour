@@ -79,7 +79,7 @@
       margin:0 auto;
       display:flex;
       align-items:center;
-      justify-content:space-between;
+      justify-content:space-evenly;
       gap:16px;
     }
 
@@ -98,13 +98,23 @@
 
     /* Title card */
     .site-title {
-      background: var(--gold);
+      background: rgba(185, 151, 91, 0.9);
+      backdrop-filter: blur(8px);
       color: #111;
-      padding:10px 14px;
-      border-radius:10px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.35);
-      font-weight:700;
-      font-size:20px;
+      padding: 10px;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(24, 48, 40, 0.7);
+      font-weight: 700;
+      font-size: 32px;
+      border: none;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+      font-family: inherit;
+    }
+
+    .site-title:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 18px 40px rgba(24, 48, 40, 0.8);
     }
 
     /* ========== Home screen (center) ========== */
@@ -124,6 +134,7 @@
       right: 24px;
       text-align: right;
       background: rgba(24, 48, 40, 0.9);
+      backdrop-filter: blur(8px);
       padding: 20px 32px;
       border-radius: 16px;
       z-index: 12;
@@ -267,8 +278,41 @@
     }
     .menu-item:hover { background: rgba(255,255,255,0.04); }
 
+    /* ========== Map Sidebar (right) ========== */
+    #mapSidebar {
+      position:fixed;
+      right:0;
+      top:0;
+      width:320px;
+      height:100%;
+      z-index:45;
+      background: var(--green);
+      transform: translateX(100%);
+      transition: transform .28s cubic-bezier(.2,.9,.2,1);
+      overflow:auto;
+      backdrop-filter: blur(6px);
+      border-left:1px solid rgba(255,255,255,0.03);
+    }
+    #mapSidebar.open { transform: translateX(0); }
+    #mapSidebar .menu-inner { padding:28px; position:relative; }
+    .location-item {
+      display:block;
+      width:100%;
+      text-align:left;
+      padding:12px 10px;
+      border-radius:8px;
+      background:transparent;
+      color:inherit;
+      border:0;
+      cursor:pointer;
+      margin-bottom:8px;
+      transition: background 0.2s ease;
+    }
+    .location-item:hover { background: rgba(255,255,255,0.04); }
+    .location-item.current { background: var(--gold-clear); }
+
     /* ========== Modal ========== */
-    #floraModal {
+    #floraModal, #infoModal {
       position:fixed;
       inset:0;
       background: rgba(0,0,0,0.72);
@@ -279,7 +323,7 @@
       padding:16px;
       box-sizing:border-box;
     }
-    #floraModal .modal-card {
+    #floraModal .modal-card, #infoModal .modal-card {
       width:100%;
       max-width:900px;
       max-height:80vh;
@@ -293,9 +337,13 @@
       box-sizing:border-box;
       animation: fadeIn .28s ease both;
     }
-    #floraModal .close-modal-btn { position:absolute; right:12px; top:10px; }
+    #floraModal .close-modal-btn, #infoModal .close-modal-btn { 
+      position:absolute; 
+      right:12px; 
+      top:10px; 
+    }
 
-    #floraModal h3 { margin:0 0 6px 0; font-size:26px; }
+    #floraModal h3, #infoModal h3 { margin:0 0 6px 0; font-size:26px; }
     #floraModal .scientific { color: var(--gold); font-style:italic; margin:0 0 12px 0; }
     #floraImage {
       width:100%;
@@ -305,6 +353,11 @@
       background-size:cover;
       background-position:center;
       margin-bottom:14px;
+    }
+
+    #infoModal .info-content {
+      line-height: 1.6;
+      font-size: 16px;
     }
 
     /* ========== Flora marker styling ========== */
@@ -364,8 +417,8 @@
       to { opacity:1; transform: translateY(0); }
     }
     @keyframes pulse-glow {
-      0%,100% { box-shadow: 0 0 20px rgba(16,185,129,0.45); transform:scale(1); }
-      50% { box-shadow: 0 0 40px rgba(16,185,129,0.82); transform:scale(1.08); }
+      0%,100% { box-shadow: 0 0 20px rgba(24,48, 40,0.45); transform:scale(1); }
+      50% { box-shadow: 0 0 40px rgba(17,87,72,0.82); transform:scale(1.08); }
     }
 
     /* ========== Scrollbar ========== */
@@ -378,7 +431,7 @@
     @media (max-width:720px){
       #homeScreen h1 { font-size:30px; }
       .start-btn { padding:14px 20px; font-size:18px; }
-      #menuSidebar { width:280px; }
+      #menuSidebar, #mapSidebar { width:280px; }
       #floraImage { height:180px; }
     }
   </style>
@@ -398,13 +451,12 @@
         <header class="app-header" role="banner">
             <div class="header-inner">
                 <button id="menuBtn" class="icon-btn" aria-label="Open menu">
-                    <!-- simple hamburger -->
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:inherit;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"></path>
                     </svg>
                 </button>
 
-                <div class="site-title">The J. T. Baldwin Tour</div>
+                <button class="site-title" id="titleBtn" aria-label="Return to home">The J. T. Baldwin Tour</button>
 
                 <button id="mapBtn" class="icon-btn" aria-label="Map">
                     <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:inherit;">
@@ -466,9 +518,25 @@
 
                 <h2 style="margin:0 0 18px 0; font-size:20px;">Menu</h2>
                 <nav>
-                    <button class="menu-item">About</button>
-                    <button class="menu-item">Arboretum</button>
-                    <button class="menu-item">Campus Tour of Woody Species</button>
+                    <button class="menu-item" data-info="about">About</button>
+                    <button class="menu-item" data-info="arboretum">Arboretum</button>
+                    <button class="menu-item" data-info="campus-tour">Campus Tour of Woody Species</button>
+                </nav>
+            </div>
+        </aside>
+
+        <!-- Map Sidebar -->
+        <aside id="mapSidebar" aria-hidden="true">
+            <div class="menu-inner">
+                <button id="closeMapBtn" class="icon-btn close-menu-btn" aria-label="Close map">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <h2 style="margin:0 0 18px 0; font-size:20px;">Locations</h2>
+                <nav id="locationsList">
+                    <!-- Location buttons will be dynamically generated -->
                 </nav>
             </div>
         </aside>
@@ -490,6 +558,20 @@
                 <div id="floraImage"></div>
 
                 <div id="floraConservatorsNotes" style="color:var(--muted); margin-bottom:12px;"></div>
+            </div>
+        </div>
+
+        <!-- Info Modal -->
+        <div id="infoModal" role="dialog" aria-modal="true" aria-hidden="true">
+            <div class="modal-card" style="background: var(--green-dark);">
+                <button id="closeInfoModalBtn" class="icon-btn close-modal-btn" aria-label="Close info">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+
+                <h3 id="infoTitle"></h3>
+                <div id="infoContent" class="info-content"></div>
             </div>
         </div>
 
@@ -518,20 +600,20 @@
               image: './Pictures/whiteash.jpg',
             },
             {
-              id: 'americansycamore',
+              id: 'americanbeech',
               x: 90,
               y: 75,
-              name: 'American Sycamore',
-              scientific: 'Platanus occidentalis',
-              family: 'Platanaceae',
-              distribution: 'Virginia native; North-central and E. USA to E. Texas',
-              conservatorsnotes: 'One of the most distinctive and beautiful features of this species is the naturally exfoliating bark on young wood, which produces a mottled look of white, green, tan, and brown, varying across different trees. In areas of older wood (found at the base of the tree), the bark eventually loses this quality and takes on a more conventional appearance. The bark of a tree is like a protective skin with many functions, including the exchange of gases to enable cells in the trunk to live. It also provides waterproofing, insulation, disease protection, and, in this species, even photosynthesis. The latter can help to explain why the bark is green and peels on young upper wood (exposing young fresh tissue for photosynthesis), as opposed to the non-photosynthetic rough bark on old lower wood.',
-              image: './Pictures/americansycamore.jpg'
+              name: 'American beech',
+              scientific: 'Fagus grandifolia',
+              family: 'Fagaceae',
+              distribution: 'Virginia native; E. Canada to E. Mexico',
+              conservatorsnotes: 'One of the most common species in our local flora, the American beech can be recognized by its smooth gray bark and leaves with pronounced, regularly spaced secondary veins running to slightly toothed margins. Like its relatives, the oaks and chestnuts, beeches produce a prolific nut crop that feeds an abundance of wildlife. However, emerging diseases are putting beeches and the wildlife that depend on them at serious risk. Help keep our beech and other trees safe by not hurting the bark, which can be an entry point for disease.',
+              image: './Pictures/americanbeech.jpg'
             },
             {
               id: 'sugarberry',
               x: 35,
-              y: 85,
+              y: 88,
               name: 'Sugarberry',
               scientific: 'Celtis laevigata',
               family: 'Cannabaceae',
@@ -566,7 +648,7 @@
               scientific: 'Sequoia sempervirens',
               family: 'Cupressaceae',
               distribution: 'SW corner of Oregon to S. Monterey Co. California',
-              conservatorsnotes: 'If you\'re a Star Wars fan, you might recall the speeder bike scene on the forested moon of Endor, where Luke and Leia raced at death-defying speeds, weaving between towering trees. While the story is fictional, the forest setting is real and dominated by the species before you. These trees are coast redwoods, which date back to the Jurassic period. Once spanning much of the Northern Hemisphere, their range contracted over millions of years to a narrow strip of dense forest along the California and Oregon coasts. Fog may play a crucial ecological role in sustaining the redwoods, which coexist with a rich understory of ferns and shrubs—also depicted in the film. While the coast redwood is known for having the tallest living trees on Earth, reaching up to 380 feet, a related species called the giant sequoia is renowned for its massive girth and remarkable age of its trees.',
+              conservatorsnotes: 'If you\'re a Star Wars fan, you might recall the speeder bike scene on the forested moon of Endor, where Luke and Leia raced at death-defying speeds, weaving between towering trees. While the story is fictional, the forest setting is real and dominated by the species before you. These trees are coast redwoods, which date back to the Jurassic period. Once spanning much of the Northern Hemisphere, their range contracted over millions of years to a narrow strip of dense forest along the California and Oregon coasts. Fog may play a crucial ecological role in sustaining the redwoods, which coexist with a rich understory of ferns and shrubsâ€"also depicted in the film. While the coast redwood is known for having the tallest living trees on Earth, reaching up to 380 feet, a related species called the giant sequoia is renowned for its massive girth and remarkable age of its trees.',
               image: './Pictures/redwood.jpg'
             },
             {
@@ -618,7 +700,7 @@
               scientific: 'Metasequoia glyptostroboides',
               family: 'Cupressaceae',
               distribution: 'South-central and S.E. China',
-              conservatorsnotes: 'Welcome back to North America! Once known only as a widely-distributed fossil with a site as close to us as New York state, the dawn redwood was believed to be extinct until it was discovered alive in China’s Hubei province in the early 1940’s. Subsequently, wild-collected seed was sent to the Arnold Arboretum in Boston to be distributed to select botanical gardens around the world for study, education, and conservation. Former William & Mary biology professor J.T. Baldwin happened to be visiting the National Botanical Garden of Belgium during the 1948 distribution and obtained seeds. He shipped them back to William & Mary where they have grown into these spectacular and scientifically valuable specimens that are progeny from wild trees.',
+              conservatorsnotes: 'Welcome back to North America! Once known only as a widely-distributed fossil with a site as close to us as New York state, the dawn redwood was believed to be extinct until it was discovered alive in Chinaâ€™s Hubei province in the early 1940â€™s. Subsequently, wild-collected seed was sent to the Arnold Arboretum in Boston to be distributed to select botanical gardens around the world for study, education, and conservation. Former William & Mary biology professor J.T. Baldwin happened to be visiting the National Botanical Garden of Belgium during the 1948 distribution and obtained seeds. He shipped them back to William & Mary where they have grown into these spectacular and scientifically valuable specimens that are progeny from wild trees.',
               image: './Pictures/dawnredwood.jpg'
             },
             {
@@ -629,7 +711,7 @@
               scientific: 'Liriodendron tulipifera',
               family: 'Magnoliaceae',
               distribution: 'Virginia native; E. USA',
-              conservatorsnotes: 'During the Civil War, two lovers died here at this spot in each other’s arms. It is said that if you and your partner hug each one of these trees, you will stay together forever.',
+              conservatorsnotes: 'During the Civil War, two lovers died here at this spot in each otherâ€™s arms. It is said that if you and your partner hug each one of these trees, you will stay together forever.',
               image: './Pictures/tulippoplar.jpg'
             },
           ],
@@ -670,7 +752,7 @@
               scientific: 'Quercus alba',
               family: 'Fagaceae',
               distribution: 'Virginia native; S.E. Canada to Central and E. USA',
-              conservatorsnotes: 'Among the 27 oak species found in Virginia, white oak is the most common. It is a stately, long-lived tree that attains massive crowns in the open. It produces strong wood, abundant food for wildlife, and important products for humans. These products include wood for cabinetry, flooring, and special uses such as barrels which impart an “oaky” flavor to wine and bourbon. Historically, acorns from this species were also an important food source for Native Americans, who used the kernels to produce flour. This process requires a lengthy procedure to remove tannins, which would otherwise impart an unpalatable bitterness to the product.',
+              conservatorsnotes: 'Among the 27 oak species found in Virginia, white oak is the most common. It is a stately, long-lived tree that attains massive crowns in the open. It produces strong wood, abundant food for wildlife, and important products for humans. These products include wood for cabinetry, flooring, and special uses such as barrels which impart an â€œoakyâ€ flavor to wine and bourbon. Historically, acorns from this species were also an important food source for Native Americans, who used the kernels to produce flour. This process requires a lengthy procedure to remove tannins, which would otherwise impart an unpalatable bitterness to the product.',
               image: './Pictures/whiteoak.jpg'
             },
           ],
@@ -689,7 +771,7 @@
               scientific: 'Cephalotaxus harringtonii',
               family: 'Cephalotaxaceae',
               distribution: 'Japan, N.E. China, and Korea',
-              conservatorsnotes: 'Once part of the indigenous flora of both North America and Asia during prehistoric times, species of the genus Cephalotaxus are now restricted to Asia, with a primary center of distribution in China. Despite their ecological and horticultural value, these species remain poorly understood and are becoming increasingly rare. One example is this spreading, low-growing form of the Japanese plum yew, which thrives in shade—a trait uncommon among many other evergreen plants. In further reading, you may encounter an earlier, grammatically incorrect spelling of C. harringtonii as C. harringtonia.',
+              conservatorsnotes: 'Once part of the indigenous flora of both North America and Asia during prehistoric times, species of the genus Cephalotaxus are now restricted to Asia, with a primary center of distribution in China. Despite their ecological and horticultural value, these species remain poorly understood and are becoming increasingly rare. One example is this spreading, low-growing form of the Japanese plum yew, which thrives in shadeâ€"a trait uncommon among many other evergreen plants. In further reading, you may encounter an earlier, grammatically incorrect spelling of C. harringtonii as C. harringtonia.',
               image: './Pictures/japaneseplumyew.jpg'
             },
             {
@@ -700,7 +782,7 @@
               scientific: 'Magnolia virginiana',
               family: 'Magnoliaceae',
               distribution: 'Virginia native; E. USA to Texas and Cuba',
-              conservatorsnotes: 'Most of us are familiar with the southern magnolia, but did you know that sweetbay is the most common naturally-occurring magnolia of Virginia’s Coastal Plain? Sweetbay features smaller and more delicate leaves, flowers, and fruits, but stands out with its waxy-white leaf undersides that contrast with its semi-evergreen foliage—an especially beautiful feature in the wind. Unlike most other magnolias, sweetbay is tolerant of continuously wet sites (in full sun to partial shade).',
+              conservatorsnotes: 'Most of us are familiar with the southern magnolia, but did you know that sweetbay is the most common naturally-occurring magnolia of Virginiaâ€™s Coastal Plain? Sweetbay features smaller and more delicate leaves, flowers, and fruits, but stands out with its waxy-white leaf undersides that contrast with its semi-evergreen foliageâ€"an especially beautiful feature in the wind. Unlike most other magnolias, sweetbay is tolerant of continuously wet sites (in full sun to partial shade).',
               image: './Pictures/sweetbay.jpg'
             },
           ],
@@ -741,7 +823,7 @@
               scientific: 'Cunninghamia lanceolata',
               family: 'Cupressaceae',
               distribution: 'South-central and S.E. China',
-              conservatorsnotes: 'The China fir is one of the most important trees for the ecology and economy of China, particularly in regions south of the Yangtze River. Its fast growth, easily worked wood, and strong resistance to rot and termites have fostered widespread planting and use in China. New variants with superior properties such as “red heart” are still being discovered and actively studied in laboratories, which could lead to significant improvement of wood products.',
+              conservatorsnotes: 'The China fir is one of the most important trees for the ecology and economy of China, particularly in regions south of the Yangtze River. Its fast growth, easily worked wood, and strong resistance to rot and termites have fostered widespread planting and use in China. New variants with superior properties such as â€œred heartâ€ are still being discovered and actively studied in laboratories, which could lead to significant improvement of wood products.',
               image: './Pictures/chinafir.jpg'
             },
           ],
@@ -856,6 +938,17 @@
               conservatorsnotes: '',
               image: './Pictures/osmanthus.jpg'
             },
+            {
+              id: 'americansycamore',
+              x: 84,
+              y: 47,
+              name: 'American Sycamore',
+              scientific: 'Platanus occidentalis',
+              family: 'Platanaceae',
+              distribution: 'Virginia native; North-central and E. USA to E. Texas',
+              conservatorsnotes: 'One of the most distinctive and beautiful features of this species is the naturally exfoliating bark on young wood, which produces a mottled look of white, green, tan, and brown, varying across different trees. In areas of older wood (found at the base of the tree), the bark eventually loses this quality and takes on a more conventional appearance. The bark of a tree is like a protective skin with many functions, including the exchange of gases to enable cells in the trunk to live. It also provides waterproofing, insulation, disease protection, and, in this species, even photosynthesis. The latter can help to explain why the bark is green and peels on young upper wood (exposing young fresh tissue for photosynthesis), as opposed to the non-photosynthetic rough bark on old lower wood.',
+              image: './Pictures/americansycamore.jpg'
+            },
           ],
           connections: { forward: 'wren', backward: 'adamsgarden' }
         },
@@ -863,16 +956,64 @@
       startLocation: 'wren'
     };
 
+    // Info content for modal displays
+    const infoContent = {
+      about: {
+        title: 'About the J.T. Baldwin Tour',
+        content: `
+          <p>The J.T. Baldwin Tour is a virtual botanical journey through the College of William & Mary campus, showcasing the diverse collection of trees and plants that make up our living arboretum.</p>
+          
+          <p>Named after Professor J.T. Baldwin, who served the college from 1946 to 1974, this tour celebrates his vision that "an arboretum was as important to a college as a library." Professor Baldwin traveled the world acquiring plants for teaching and research, creating the remarkable botanical diversity we see on campus today.</p>
+          
+          <p>This interactive tour allows you to explore various locations around campus, learn about the flora species found at each site, and discover the stories behind these remarkable plants.</p>
+        `
+      },
+      arboretum: {
+        title: 'The William & Mary Arboretum',
+        content: `
+          <p>The William & Mary campus serves as a living arboretum, featuring over 200 species of trees and woody plants from around the world. This collection represents decades of careful cultivation and scientific study.</p>
+          
+          <p>The arboretum includes both native Virginia species and exotic plants from Asia, Europe, and other regions. Each specimen serves educational and research purposes, providing students and faculty with hands-on learning opportunities in botany, ecology, and conservation.</p>
+          
+          <p>Key features of our arboretum include:</p>
+          <ul>
+            <li>Rare and endangered species preservation</li>
+            <li>Climate adaptation research</li>
+            <li>Student and faculty research opportunities</li>
+            <li>Community education and outreach</li>
+          </ul>
+        `
+      },
+      'campus-tour': {
+        title: 'Campus Tour of Woody Species',
+        content: `
+          <p>The Campus Tour of Woody Species highlights the remarkable diversity of trees and shrubs found throughout William & Mary's historic grounds. This self-guided experience showcases specimens from every continent except Antarctica.</p>
+          
+          <p>The tour includes eight distinct locations, each featuring unique plant communities and individual specimens of particular scientific or historical interest. From the iconic Wren Building to the serene Crim Dell, each stop offers insights into plant biology, ecology, and human cultural connections to the natural world.</p>
+          
+          <p>Highlights include:</p>
+          <ul>
+            <li>Living fossils like the Dawn Redwood and Ginkgo</li>
+            <li>Native Virginia species supporting local wildlife</li>
+            <li>Exotic species with fascinating cultural histories</li>
+            <li>Conservation success stories and ongoing research</li>
+          </ul>
+        `
+      }
+    };
+
     // --- App state and methods ---
     class TourApp {
       constructor(){
         this.currentLocation = null;
         this.isMenuOpen = false;
+        this.isMapOpen = false;
         this.init();
       }
 
       init(){
         this.setupEventListeners();
+        this.populateLocationsList();
         this.showHomeScreen();
       }
 
@@ -880,9 +1021,25 @@
         // Start
         document.getElementById('startBtn').addEventListener('click', () => this.startTour());
 
+        // Title button to return home
+        document.getElementById('titleBtn').addEventListener('click', () => this.returnHome());
+
         // Menu open/close
         document.getElementById('menuBtn').addEventListener('click', () => this.toggleMenu());
         document.getElementById('closeMenuBtn').addEventListener('click', () => this.toggleMenu());
+
+        // Map open/close
+        document.getElementById('mapBtn').addEventListener('click', () => this.toggleMap());
+        document.getElementById('closeMapBtn').addEventListener('click', () => this.toggleMap());
+
+        // Menu items - info modals
+        document.querySelectorAll('.menu-item[data-info]').forEach(item => {
+          item.addEventListener('click', (e) => {
+            const infoType = e.target.dataset.info;
+            this.showInfoModal(infoType);
+            this.toggleMenu(); // Close menu after selection
+          });
+        });
 
         // Navigation buttons
         document.querySelectorAll('.nav-btn').forEach(btn => {
@@ -892,17 +1049,55 @@
           });
         });
 
-        // Modal
+        // Flora modal
         document.getElementById('closeModalBtn').addEventListener('click', () => this.closeFloraModal());
         document.getElementById('floraModal').addEventListener('click', (e) => {
           if (e.target.id === 'floraModal') this.closeFloraModal();
         });
 
-        // close menu if clicked outside on small screens
+        // Info modal
+        document.getElementById('closeInfoModalBtn').addEventListener('click', () => this.closeInfoModal());
+        document.getElementById('infoModal').addEventListener('click', (e) => {
+          if (e.target.id === 'infoModal') this.closeInfoModal();
+        });
+
+        // Close menus if clicked outside on small screens
         document.addEventListener('click', (e) => {
-          const sidebar = document.getElementById('menuSidebar');
-          if (!sidebar.contains(e.target) && !document.getElementById('menuBtn').contains(e.target) && this.isMenuOpen) {
+          const menuSidebar = document.getElementById('menuSidebar');
+          const mapSidebar = document.getElementById('mapSidebar');
+          
+          if (!menuSidebar.contains(e.target) && !document.getElementById('menuBtn').contains(e.target) && this.isMenuOpen) {
             this.toggleMenu();
+          }
+          
+          if (!mapSidebar.contains(e.target) && !document.getElementById('mapBtn').contains(e.target) && this.isMapOpen) {
+            this.toggleMap();
+          }
+        });
+      }
+
+      populateLocationsList(){
+        const locationsList = document.getElementById('locationsList');
+        locationsList.innerHTML = '';
+
+        Object.values(tourData.locations).forEach(location => {
+          const button = document.createElement('button');
+          button.className = 'location-item';
+          button.textContent = location.name;
+          button.addEventListener('click', () => {
+            this.loadLocation(location.id);
+            this.toggleMap(); // Close map after selection
+          });
+          locationsList.appendChild(button);
+        });
+      }
+
+      updateLocationsList(){
+        document.querySelectorAll('.location-item').forEach(item => {
+          if (item.textContent === tourData.locations[this.currentLocation]?.name) {
+            item.classList.add('current');
+          } else {
+            item.classList.remove('current');
           }
         });
       }
@@ -912,11 +1107,13 @@
         document.getElementById('navigationControls').style.display = 'none';
         document.getElementById('locationIndicator').style.display = 'none';
         document.getElementById('sceneContainer').style.display = 'none';
+        this.currentLocation = null;
+        this.updateLocationsList();
+        this.toggleHeader();
+      }
 
-        // set a pleasant placeholder background for the home screen
-        const homeScreen = document.getElementById('homeScreen');
-
-        toggleHeader();
+      returnHome(){
+        this.showHomeScreen();
       }
 
       startTour(){
@@ -926,8 +1123,7 @@
         document.getElementById('sceneContainer').style.display = 'block';
 
         this.loadLocation(tourData.startLocation);
-
-        toggleHeader();
+        this.toggleHeader();
       }
 
       loadLocation(locationId){
@@ -935,22 +1131,29 @@
         if (!location) return;
         this.currentLocation = locationId;
 
-        // Fade swap background
-        const sceneBackground = document.getElementById('sceneBackground');
-        sceneBackground.style.opacity = '0';
-        setTimeout(() => {
-          sceneBackground.src = location.background;
-          sceneBackground.style.opacity = '1';
-        }, 300);
+        // Preload the image
+        const img = new Image();
+        img.onload = () => {
+          // Once image is loaded, fade swap background and render markers simultaneously
+          const sceneBackground = document.getElementById('sceneBackground');
+          sceneBackground.style.opacity = '0';
+          setTimeout(() => {
+            sceneBackground.src = location.background;
+            sceneBackground.style.opacity = '1';
+            // Render flora markers at the same time as image loads
+            this.renderFloraMarkers(location.flora);
+          }, 300);
+        };
+        img.src = location.background;
 
         // Update location text
         document.getElementById('currentLocation').textContent = location.name;
 
-        // Render flora markers
-        this.renderFloraMarkers(location.flora);
-
         // Update navigation availability
         this.updateNavigationButtons(location.connections);
+
+        // Update locations list to show current
+        this.updateLocationsList();
       }
 
       renderFloraMarkers(floraList){
@@ -1034,6 +1237,24 @@
         modal.setAttribute('aria-hidden','true');
       }
 
+      showInfoModal(infoType){
+        const info = infoContent[infoType];
+        if (!info) return;
+
+        document.getElementById('infoTitle').textContent = info.title;
+        document.getElementById('infoContent').innerHTML = info.content;
+
+        const modal = document.getElementById('infoModal');
+        modal.style.display = 'flex';
+        modal.setAttribute('aria-hidden','false');
+      }
+
+      closeInfoModal(){
+        const modal = document.getElementById('infoModal');
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden','true');
+      }
+
       toggleMenu(){
         const sidebar = document.getElementById('menuSidebar');
         this.isMenuOpen = !this.isMenuOpen;
@@ -1045,15 +1266,27 @@
           sidebar.setAttribute('aria-hidden','true');
         }
       }
-    }
 
-    function toggleHeader() {
-      const homeScreenVisible = document.getElementById('homeScreen').style.display !== 'none';
-      const header = document.querySelector('header.app-header');
-      if (homeScreenVisible) {
-        header.style.display = 'none'; // Hide header on home screen
-      } else {
-        header.style.display = 'block'; // Show header otherwise
+      toggleMap(){
+        const sidebar = document.getElementById('mapSidebar');
+        this.isMapOpen = !this.isMapOpen;
+        if (this.isMapOpen) {
+          sidebar.classList.add('open');
+          sidebar.setAttribute('aria-hidden','false');
+        } else {
+          sidebar.classList.remove('open');
+          sidebar.setAttribute('aria-hidden','true');
+        }
+      }
+
+      toggleHeader() {
+        const homeScreenVisible = document.getElementById('homeScreen').style.display !== 'none';
+        const header = document.querySelector('header.app-header');
+        if (homeScreenVisible) {
+          header.style.display = 'none'; // Hide header on home screen
+        } else {
+          header.style.display = 'block'; // Show header otherwise
+        }
       }
     }
 
