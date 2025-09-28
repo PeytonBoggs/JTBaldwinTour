@@ -25,7 +25,7 @@
     html,body{
       height:100%;
       margin:0;
-      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      font-family: serif;
       background: var(--bg);
       color: #fff;
       -webkit-font-smoothing:antialiased;
@@ -119,33 +119,55 @@
       z-index:10;
     }
     #homeScreen .home-inner {
-      text-align:center;
-      position:relative;
-      z-index:12;
-      animation: fadeIn .45s ease both;
+      position: absolute;
+      top: 24px;
+      right: 24px;
+      text-align: right;
+      background: rgba(24, 48, 40, 0.9);
+      padding: 20px 32px;
+      border-radius: 16px;
+      z-index: 12;
+      box-shadow: 0 8px 20px rgba(24, 48, 40, 0.7);
     }
+
     #homeScreen h1 {
-      font-size:48px;
-      margin:0 0 28px 0;
-      text-shadow: 0 6px 20px rgba(0,0,0,0.7);
+      font-size: 96px;
+      margin: 0 0 16px 0;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 3px 10px rgba(0, 0, 0, 0.8);
     }
+
     .start-btn {
       background: var(--gold);
-      border:0;
-      padding:18px 34px;
-      font-size:20px;
-      color:white;
-      border-radius:999px;
-      display:inline-flex;
-      gap:12px;
-      align-items:center;
-      cursor:pointer;
-      transition: transform .18s ease, box-shadow .18s ease, background .12s ease;
+      border: 0;
+      padding: 14px 28px;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+      border-radius: 999px;
+      display: inline-flex;
+      gap: 12px;
+      align-items: center;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.12s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
+
     .start-btn:hover {
-      transform:translateY(-6px);
+      transform: translateY(-6px);
       background: var(--green);
-      box-shadow: 0 18px 40px rgba(2,6,23,0.6);
+      box-shadow: 0 18px 40px rgba(2, 6, 23, 0.6);
+    }
+
+    #home-bg-video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: fill;
+      z-index: -1;
     }
 
     /* ========== Navigation control (center bottom) ========== */
@@ -394,15 +416,19 @@
 
         <!-- Home screen (center) -->
         <div id="homeScreen">
-            <div class="home-inner">
-                <h1>The J. T. Baldwin Tour</h1>
-                <button id="startBtn" class="start-btn" aria-label="Start tour">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:inherit;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
-                    </svg>
-                    Start Tour
-                </button>
-            </div>
+          <video autoplay muted loop playsinline id="home-bg-video" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1;">
+            <source src="./Pictures/dawnredwoods.MP4" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="home-inner">
+            <h1>The J. T. Baldwin Tour</h1>
+            <button id="startBtn" class="start-btn" aria-label="Start tour">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color:inherit;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+              </svg>
+              Start
+            </button>
+          </div>
         </div>
 
         <!-- Navigation controls (bottom center) -->
@@ -889,7 +915,8 @@
 
         // set a pleasant placeholder background for the home screen
         const homeScreen = document.getElementById('homeScreen');
-        homeScreen.style.backgroundImage = "url('/api/placeholder/1920/1080')";
+
+        toggleHeader();
       }
 
       startTour(){
@@ -899,6 +926,8 @@
         document.getElementById('sceneContainer').style.display = 'block';
 
         this.loadLocation(tourData.startLocation);
+
+        toggleHeader();
       }
 
       loadLocation(locationId){
@@ -1015,6 +1044,16 @@
           sidebar.classList.remove('open');
           sidebar.setAttribute('aria-hidden','true');
         }
+      }
+    }
+
+    function toggleHeader() {
+      const homeScreenVisible = document.getElementById('homeScreen').style.display !== 'none';
+      const header = document.querySelector('header.app-header');
+      if (homeScreenVisible) {
+        header.style.display = 'none'; // Hide header on home screen
+      } else {
+        header.style.display = 'block'; // Show header otherwise
       }
     }
 
